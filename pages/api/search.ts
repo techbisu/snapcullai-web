@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import type { NextApiRequest, NextApiResponse } from "next";
 import formidable, { type File, type Fields, type Files } from "formidable";
 import { searchMatches } from "@/lib/face";
+import { hasEvent } from "@/lib/r2";
 
 export const config = {
   api: {
@@ -24,6 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!eventId) {
       return res.status(400).json({ error: "eventId is required" });
+    }
+
+    if (!(await hasEvent(eventId))) {
+      return res.status(404).json({ error: "Event not found" });
     }
 
     if (!uploadedFile) {

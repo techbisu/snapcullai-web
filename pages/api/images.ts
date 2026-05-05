@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getImages } from "@/lib/r2";
+import { getImages, hasEvent } from "@/lib/r2";
 import { normalizeFilter } from "@/lib/utils";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -18,6 +18,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const filter = normalizeFilter(req.query.filter);
 
   try {
+    if (!(await hasEvent(eventId))) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
     const page = await getImages({
       eventId,
       filter,

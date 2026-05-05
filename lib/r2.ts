@@ -9,6 +9,7 @@ import {
   type GalleryFilter,
   type ImageAsset,
   type ImagePage,
+  formatEventName,
   matchesFilter,
   paginateImages,
   shimmerBlurDataUrl,
@@ -36,7 +37,15 @@ type R2ManifestItem = Partial<ImageAsset> & {
 
 type R2Manifest = {
   eventId?: string;
+  eventName?: string;
   images: R2ManifestItem[];
+};
+
+const DEMO_EVENT_ID = "sample-wedding";
+
+export type EventSummary = {
+  eventId: string;
+  eventName: string;
 };
 
 const bucket = process.env.CLOUDFLARE_R2_BUCKET;
@@ -103,8 +112,45 @@ export async function getImages({
   return paginateImages(filtered, filter === "top" ? Math.min(limit, 20) : limit, cursor);
 }
 
+export async function hasEvent(eventId: string): Promise<boolean> {
+  if (!hasR2Config()) {
+    return eventId === DEMO_EVENT_ID;
+  }
+
+  const manifest = await readManifest(eventId).catch(() => null);
+  if (manifest?.images?.length) {
+    return true;
+  }
+
+  const images = await listImagesFromBucket(eventId);
+  return images.length > 0;
+}
+
+export async function getEventSummary(eventId: string): Promise<EventSummary | null> {
+  if (!(await hasEvent(eventId))) {
+    return null;
+  }
+
+  if (!hasR2Config()) {
+    return {
+      eventId,
+      eventName: eventId === DEMO_EVENT_ID ? "Sample Wedding" : formatEventName(eventId)
+    };
+  }
+
+  const manifest = await readManifest(eventId).catch(() => null);
+  return {
+    eventId,
+    eventName: manifest?.eventName?.trim() || formatEventName(eventId)
+  };
+}
+
 export async function getEmbeddings(eventId: string): Promise<StoredEmbedding[]> {
   if (!hasR2Config()) {
+    if (eventId !== DEMO_EVENT_ID) {
+      return [];
+    }
+
     return seedImages(eventId).map((image, index) => ({
       imageId: image.id,
       embedding: deterministicSeedEmbedding(index)
@@ -130,6 +176,9 @@ export async function getEmbeddings(eventId: string): Promise<StoredEmbedding[]>
 
 async function readEventImages(eventId: string) {
   if (!hasR2Config()) {
+    if (eventId !== DEMO_EVENT_ID) {
+      return [];
+    }
     return seedImages(eventId);
   }
 
@@ -188,7 +237,7 @@ async function normalizeManifestImage(eventId: string, image: R2ManifestItem): P
 async function listImagesFromBucket(eventId: string) {
   const client = getClient();
   if (!client || !bucket) {
-    return seedImages(eventId);
+    return eventId === DEMO_EVENT_ID ? seedImages(eventId) : [];
   }
 
   const objects: _Object[] = [];

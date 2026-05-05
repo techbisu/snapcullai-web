@@ -39,7 +39,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "uploadedPhotos are required" });
     }
 
-    const response = await completeUpload(eventId, body.uploadedPhotos);
+    if (!body.uploadBatchId) {
+      return res.status(400).json({ error: "uploadBatchId is required" });
+    }
+
+    const response = await completeUpload(eventId, body.uploadBatchId, body.uploadedPhotos);
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json(response);
   } catch (error) {

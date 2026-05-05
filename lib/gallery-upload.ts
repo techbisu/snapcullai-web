@@ -51,7 +51,15 @@ type ManifestImage = {
 
 type Manifest = {
   eventId: string;
+  eventName?: string;
   images: ManifestImage[];
+};
+
+type UploadBatch = {
+  eventId: string;
+  eventName: string;
+  uploadBatchId: string;
+  createdAt: string;
 };
 
 const bucket = process.env.CLOUDFLARE_R2_BUCKET;
@@ -172,6 +180,22 @@ export async function createUploadSession(input: {
     })
   );
 
+  const uploadBatch: UploadBatch = {
+    eventId: input.eventId,
+    eventName: input.eventName,
+    uploadBatchId,
+    createdAt: new Date().toISOString()
+  };
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: resolvedBucket,
+      Key: `events/${input.eventId}/upload-batches/${uploadBatchId}.json`,
+      Body: JSON.stringify(uploadBatch, null, 2),
+      ContentType: "application/json"
+    })
+  );
+
   return {
     galleryUrl,
     eventId: input.eventId,
@@ -199,10 +223,30 @@ async function readManifest(eventId: string): Promise<Manifest | null> {
   }
 }
 
-export async function completeUpload(eventId: string, uploadedPhotos: UploadedPhotoPayload[]) {
+async function readUploadBatch(eventId: string, uploadBatchId: string): Promise<UploadBatch | null> {
+  const client = getClient();
+  const resolvedBucket = ensureBucket();
+
+  try {
+    const response = await client.send(
+      new GetObjectCommand({
+        Bucket: resolvedBucket,
+        Key: `events/${eventId}/upload-batches/${uploadBatchId}.json`
+      })
+    );
+    const text = await response.Body?.transformToString();
+    if (!text) return null;
+    return JSON.parse(text) as UploadBatch;
+  } catch {
+    return null;
+  }
+}
+
+export async function completeUpload(eventId: string, uploadBatchId: string, uploadedPhotos: UploadedPhotoPayload[]) {
   const client = getClient();
   const resolvedBucket = ensureBucket();
   const currentManifest = await readManifest(eventId);
+  const uploadBatch = await readUploadBatch(eventId, uploadBatchId);
   const existing = new Map((currentManifest?.images || []).map((image) => [image.id, image]));
 
   uploadedPhotos.forEach((photo) => {
@@ -226,6 +270,7 @@ export async function completeUpload(eventId: string, uploadedPhotos: UploadedPh
 
   const manifest: Manifest = {
     eventId,
+    eventName: currentManifest?.eventName || uploadBatch?.eventName || eventId,
     images: Array.from(existing.values()).sort((a, b) => {
       const aTime = a.capturedAt ? new Date(a.capturedAt).getTime() : 0;
       const bTime = b.capturedAt ? new Date(b.capturedAt).getTime() : 0;

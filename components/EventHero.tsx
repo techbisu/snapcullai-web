@@ -6,6 +6,7 @@ import { Facebook, Instagram, MessageCircleHeart, Music2, Youtube } from "lucide
 import { cn, isRemoteUrl } from "@/lib/utils";
 
 type EventHeroProps = {
+  eventId: string;
   eventName: string;
   photoCount: number;
   heroImageUrl?: string;
@@ -13,7 +14,7 @@ type EventHeroProps = {
 
 const socialIcons = [Instagram, Facebook, Youtube, Music2, MessageCircleHeart];
 
-export default function EventHero({ eventName, photoCount, heroImageUrl }: EventHeroProps) {
+export default function EventHero({ eventId, eventName, photoCount, heroImageUrl }: EventHeroProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isEntered, setIsEntered] = useState(false);
 
@@ -76,6 +77,7 @@ export default function EventHero({ eventName, photoCount, heroImageUrl }: Event
               <div className="max-w-[18rem]">
                 <p className="text-[10px] uppercase tracking-[0.36em] text-amber-100/80">Wedding Gallery</p>
                 <h1 className="font-display mt-7 text-[3.2rem] leading-[0.88] tracking-tight text-white">{eventName}</h1>
+                <p className="mt-3 text-[11px] uppercase tracking-[0.24em] text-amber-100/70">Event ID: {eventId}</p>
                 <div className="mt-4 flex items-center justify-center gap-3 text-[10px] font-medium uppercase tracking-[0.32em] text-amber-100/75">
                   <span className="h-px w-9 bg-gradient-to-r from-transparent to-amber-100/60" />
                   Forever Starts Here
@@ -179,6 +181,9 @@ export default function EventHero({ eventName, photoCount, heroImageUrl }: Event
               <h1 className={cn("font-display mt-4 text-[2.8rem] leading-[0.92] tracking-tight text-white sm:text-6xl lg:text-7xl", heroImageUrl ? "text-left" : "text-center")}>
                 {eventName}
               </h1>
+              <p className={cn("mt-3 text-[11px] uppercase tracking-[0.24em] text-amber-100/70", heroImageUrl ? "" : "text-center")}>
+                Event ID: {eventId}
+              </p>
               <div className={cn("mt-4 flex gap-3 text-[10px] font-medium uppercase tracking-[0.3em] text-amber-100/80 sm:text-xs", heroImageUrl ? "items-center" : "items-center justify-center")}>
                 <span className="h-px w-10 bg-gradient-to-r from-transparent to-amber-100/60 sm:w-16" />
                 Forever Starts Here

@@ -27,6 +27,7 @@ Recommended `manifest.json`:
 ```json
 {
   "eventId": "sample-wedding",
+  "eventName": "Riya & Arjun Wedding",
   "images": [
     {
       "id": "img-001",
