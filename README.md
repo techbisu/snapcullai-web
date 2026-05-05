@@ -62,3 +62,34 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 Selfies are parsed in `/api/search`, processed in memory from a temporary upload file, and deleted in the request `finally` block.
+
+## Android Upload API
+
+The Android app expects these Vercel API routes:
+
+- `POST /api/galleries/upload-session`
+- `POST /api/galleries/{eventId}/complete`
+
+`upload-session` returns presigned Cloudflare R2 upload URLs under:
+
+```text
+events/{eventId}/images/{label}/{photoId}-{fileName}.jpg
+```
+
+`complete` writes or updates:
+
+```text
+events/{eventId}/manifest.json
+```
+
+For Vercel production, set these project environment variables:
+
+```bash
+CLOUDFLARE_R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+CLOUDFLARE_R2_ACCESS_KEY_ID=...
+CLOUDFLARE_R2_SECRET_ACCESS_KEY=...
+CLOUDFLARE_R2_BUCKET=snapcull-gallery
+CLOUDFLARE_R2_PUBLIC_BASE_URL=https://cdn.example.com
+FACE_MATCH_THRESHOLD=0.82
+NEXT_PUBLIC_APP_URL=https://eventculling.vercel.app
+```
