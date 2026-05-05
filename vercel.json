@@ -1,0 +1,11 @@
+{
+  "framework": "nextjs",
+  "functions": {
+    "pages/api/search.ts": {
+      "maxDuration": 30
+    },
+    "pages/api/images.ts": {
+      "maxDuration": 10
+    }
+  }
+}
